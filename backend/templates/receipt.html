@@ -1,0 +1,52 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #0055a4; padding-bottom: 10px; }
+        .details { margin-top: 20px; }
+        .allocations table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .allocations th, .allocations td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .total { font-weight: bold; text-align: right; margin-top: 15px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>{% trans "Seventh-Day Adventist Church" %}</h2>
+        <h3>{% trans "Nyamira Conference" %}</h3>
+        <p>{% trans "Official Digital Receipt" %}</p>
+    </div>
+    
+    <div class="details">
+        <p><strong>{% trans "Receipt No:" %}</strong> {{ transaction.paystack_reference }}</p>
+        <p><strong>{% trans "Date:" %}</strong> {{ transaction.updated_at|date:"d M Y, H:i" }}</p>
+        <p><strong>{% trans "Member Phone:" %}</strong> {{ transaction.phone_number }}</p>
+        <p><strong>{% trans "Local Church:" %}</strong> {{ transaction.local_church.name }}</p>
+    </div>
+
+    <div class="allocations">
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans "Category" %}</th>
+                    <th>{% trans "Amount (KES)" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for allocation in transaction.allocations.all %}
+                <tr>
+                    <td>{{ allocation.category.name }}</td>
+                    <td>{{ allocation.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="total">
+        {% trans "Total Paid:" %} KES {{ transaction.total_amount }}
+    </div>
+</body>
+</html>
