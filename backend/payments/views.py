@@ -135,11 +135,16 @@ class PaystackWebhookView(APIView):
                         
                         # Idempotency check: only process if not already completed
                         if transaction.status != 'COMPLETED':
+                            # 1. ALWAYS save the completed status first
                             transaction.status = 'COMPLETED'
                             transaction.save()
                             
-                            generate_receipt_pdf(transaction.id)
-                            print(f"Transaction {reference} marked as COMPLETED.")
+                            # 2. Safely attempt the PDF generation
+                            try:
+                                generate_receipt_pdf(transaction.id)
+                                print(f"SUCCESS: Transaction {reference} completed and PDF generated.")
+                            except Exception as e:
+                                print(f"WARNING: Transaction {reference} completed, but PDF failed: {e}")
                         else:
                             print(f"Transaction {reference} already processed.")
                             
