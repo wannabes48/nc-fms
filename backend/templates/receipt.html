@@ -22,6 +22,7 @@
     <div class="details">
         <p><strong>{% trans "Receipt No:" %}</strong> {{ transaction.paystack_reference }}</p>
         <p><strong>{% trans "Date:" %}</strong> {{ transaction.updated_at|date:"d M Y, H:i" }}</p>
+        <p><strong>{% trans "Member Name:" %}</strong> {{ transaction.user.first_name }} {{ transaction.user.last_name }}</p>
         <p><strong>{% trans "Member Phone:" %}</strong> {{ transaction.phone_number }}</p>
         <p><strong>{% trans "Local Church:" %}</strong> {{ transaction.local_church.name }}</p>
     </div>

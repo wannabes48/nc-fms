@@ -79,6 +79,7 @@ class TransactionAllocation(models.Model):
         verbose_name=_('offering category')
     )
     amount = models.DecimalField(_('amount'), max_digits=10, decimal_places=2)
+    custom_description = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         verbose_name = _('Transaction Allocation')

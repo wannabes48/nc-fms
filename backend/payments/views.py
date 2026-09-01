@@ -7,17 +7,21 @@ from django.utils.decorators import method_decorator
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from finance.models import Transaction
+from rest_framework import status, permissions
+from finance.models import Transaction, TransactionAllocation, OfferingCategory
 from finance.utils import generate_receipt_pdf
 from .utils import initialize_paystack_payment, generate_reference
 
 class InitiatePaymentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request):
         amount = request.data.get('amount')
-        phone = request.data.get('phone')
+        phone = request.data.get('phone', getattr(request.user, 'phone_number', None))
         # Paystack strictly requires an email. If members don't have one, 
         # generate a placeholder based on their phone number for the system.
+        allocations = request.data.get('allocations', {})
+
         email = request.data.get('email', f"{phone}@nyamiraconference.org")
         
         if not amount or not phone:
@@ -29,9 +33,12 @@ class InitiatePaymentView(APIView):
         paystack_response = initialize_paystack_payment(email, float(amount), reference)
 
         if paystack_response.get('status'):
-            # 2. Save Pending Transaction to Database
-            Transaction.objects.create(
+            church = request.user.profile.local_church if hasattr(request.user, 'profile') else None
+            #  Save Pending Transaction to Database
+            transaction = Transaction.objects.create(
                 # user=request.user, # Uncomment when authentication is wired up
+                user=request.user, # THIS CAPTURES THE USER IN THE DB
+                local_church=church, # Links payment to their church
                 total_amount=amount,
                 phone_number=phone,
                 paystack_reference=reference,
@@ -39,13 +46,29 @@ class InitiatePaymentView(APIView):
                 status='PENDING'
             )
 
+            # Iterate through the split and create Allocation records
+            if isinstance(allocations, dict):
+                for cat_id, data in allocations.items():
+                    amt = data.get('amount') if isinstance(data, dict) else data
+                    custom_text = data.get('custom', '') if isinstance(data, dict) else ''
+
+                    if amt and float(amt) > 0:
+                        category = OfferingCategory.objects.filter(id=cat_id).first()
+                        if category:
+                            TransactionAllocation.objects.create(
+                                transaction=transaction,
+                                category=category,
+                                amount=amt,
+                                custom_description=custom_text if category.name.lower() == 'other' else None
+                            )
+
             # 3. Return the Paystack Checkout URL to the frontend
             return Response({
                 'authorization_url': paystack_response['data']['authorization_url'],
                 'reference': reference
             }, status=status.HTTP_200_OK)
         
-        return Response({'error': 'Paystack initialization failed'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Paystack initialization failed', 'details': paystack_response}, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(csrf_exempt, name='dispatch') # Webhooks don't use CSRF tokens
 class PaystackWebhookView(APIView):

@@ -2,19 +2,39 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 
+class Station(models.Model):
+    name = models.CharField(_('station name'), max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Station')
+        verbose_name_plural = _('Stations')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
 class District(models.Model):
     name = models.CharField(_('district name'), max_length=100, unique=True)
+    station = models.ForeignKey(
+        Station, 
+        on_delete=models.CASCADE, 
+        related_name='districts',
+        verbose_name=_('station'),
+        null=True # Nullable temporarily to allow migrations of existing DB
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = _('District')
         verbose_name_plural = _('Districts')
-        ordering = ['name']
+        ordering = ['station__name', 'name']
 
     def __str__(self):
-        return self.name
+            return self.name
 
+    
 class LocalChurch(models.Model):
     name = models.CharField(_('church name'), max_length=100)
     district = models.ForeignKey(
@@ -46,23 +66,18 @@ class MemberProfile(models.Model):
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
         related_name='profile',
-        verbose_name=_('user')
     )
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
     local_church = models.ForeignKey(
-        LocalChurch, 
+        'LocalChurch', 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
         related_name='members',
-        verbose_name=_('local church')
     )
-    full_name = models.CharField(_('full name'), max_length=150)
     is_clerk = models.BooleanField(_('is local clerk'), default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        verbose_name = _('Member Profile')
-        verbose_name_plural = _('Member Profiles')
-
     def __str__(self):
-        return f"{self.full_name} ({self.local_church})"
+        return f"{self.user.phone_number} - {self.local_church.name if self.local_church else 'No Church'}"
