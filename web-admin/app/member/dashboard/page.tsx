@@ -13,7 +13,7 @@ export default function MemberDashboard() {
     if (!token) return;
 
     // Fetch real data from Django
-    fetch('http://localhost:8000/api/transactions/history/', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/history/`, {
       headers: {
         'Authorization': `Token ${token}`,
         'Content-Type': 'application/json'
@@ -44,7 +44,7 @@ export default function MemberDashboard() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    fetch('http://localhost:8000/api/auth/profile/', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile/`, {
       headers: { 'Authorization': `Token ${token}` }
     })
       .then(res => res.json())

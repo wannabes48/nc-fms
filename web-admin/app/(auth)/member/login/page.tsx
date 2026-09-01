@@ -25,7 +25,7 @@ export default function MemberLogin() {
   // Fetch Stations when user reaches the church_select step
   useEffect(() => {
     if (step === 'church_select') {
-      fetch('http://localhost:8000/api/stations/')
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stations/`)
         .then(res => res.json())
         .then(data => setStations(data.results || data))
         .catch(err => console.error("Error fetching stations:", err));
@@ -35,7 +35,7 @@ export default function MemberLogin() {
   // Fetch Districts when a Station is selected
   useEffect(() => {
     if (selectedStation) {
-      fetch(`http://localhost:8000/api/districts/?station_id=${selectedStation}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/districts/?station_id=${selectedStation}`)
         .then(res => res.json())
         .then(data => setDistricts(data.results || data));
     } else {
@@ -47,7 +47,7 @@ export default function MemberLogin() {
   // Fetch Churches when a District is selected
   useEffect(() => {
     if (selectedDistrict) {
-      fetch(`http://localhost:8000/api/churches/?district_id=${selectedDistrict}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/churches/?district_id=${selectedDistrict}`)
         .then(res => res.json())
         .then(data => setChurches(data.results || data));
     } else {
@@ -59,7 +59,7 @@ export default function MemberLogin() {
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:8000/api/auth/request-otp/', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/request-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone_number: phone })
@@ -73,7 +73,7 @@ export default function MemberLogin() {
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/auth/verify-otp/', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone_number: phone, otp })
@@ -99,7 +99,7 @@ export default function MemberLogin() {
     const token = localStorage.getItem('token');
     
     try {
-      await fetch('http://localhost:8000/api/auth/update-profile/', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-profile/`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export default function MemberLogin() {
     const token = localStorage.getItem('token');
     
     // Save names to Django profile backend
-    await fetch('http://localhost:8000/api/auth/update-profile/', {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-profile/`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',

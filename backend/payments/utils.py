@@ -1,29 +1,45 @@
 import requests
 from django.conf import settings
 import uuid
+import re
 
 def generate_reference():
     return f"NC-{uuid.uuid4().hex[:12].upper()}"
 
-def initialize_paystack_payment(email, amount, reference):
+def trigger_mpesa_stk(email, amount, reference, phone):
     """
-    Calls Paystack to start a transaction. 
-    Amount must be in the lowest currency unit (e.g., Cents/Kobo). For KES, multiply by 100.
+    Calls the Paystack Charge API to trigger a direct M-Pesa STK Push.
     """
-    url = "https://api.paystack.co/transaction/initialize"
+    url = "https://api.paystack.co/charge"
+    
     headers = {
         "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
         "Content-Type": "application/json"
     }
-    data = {
+    
+    # Paystack requires the amount in the lowest denomination (cents for KES)
+    amount_in_cents = int(float(amount) * 100)
+    # Sanitize phone number to strictly include the '+' prefix (+2547...)
+    safe_phone = re.sub(r'\D', '', str(phone))
+    if safe_phone.startswith('0'):
+        safe_phone = '+254' + safe_phone[1:]
+    elif safe_phone.startswith('254') and len(safe_phone) == 12:
+        safe_phone = '+' + safe_phone
+    elif len(safe_phone) == 9:
+        safe_phone = '+254' + safe_phone
+    
+    payload = {
         "email": email,
-        "amount": int(amount * 100), # Convert KES to cents
-        "reference": reference,
+        "amount": amount_in_cents,
         "currency": "KES",
-        "channels": ["mobile_money", "card"] # Allow M-Pesa and Cards
+        "reference": reference,
+        "mobile_money": {
+            "phone": safe_phone,       # E.g., '0712345678'
+            "provider": "mpesa"
+        }
     }
-
-    response = requests.post(url, headers=headers, json=data)
+    
+    response = requests.post(url, json=payload, headers=headers)
     return response.json()
 
 def verify_paystack_payment(reference):

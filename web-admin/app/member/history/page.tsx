@@ -11,7 +11,7 @@ export default function HistoryPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    fetch('http://localhost:8000/api/transactions/history/', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/history/`, {
       headers: {
         'Authorization': `Token ${token}`,
         'Content-Type': 'application/json'

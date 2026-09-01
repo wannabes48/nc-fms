@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Helvetica, sans-serif; font-size: 12pt; color: #232420; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 18pt; font-weight: bold; color: #0F6E56; }
+        .details { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: #FAF9F6; text-align: left; padding: 8px; border-bottom: 1px solid #E4E1D8; }
+        td { padding: 8px; border-bottom: 1px solid #E4E1D8; }
+        .total { font-weight: bold; font-size: 14pt; color: #0F6E56; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">SDA Nyamira Conference</div>
+        <div>Official Giving Receipt</div>
+    </div>
+    
+    <div class="details">
+        <p><strong>Date:</strong> {{ transaction.created_at|date:"d M Y, H:i" }}</p>
+        <p><strong>Reference:</strong> {{ transaction.paystack_reference }}</p>
+        <p><strong>Member:</strong> {{ member_name }} ({{ transaction.phone_number }})</p>
+        <p><strong>Status:</strong> COMPLETED</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Fund Category</th>
+                <th style="text-align: right;">Amount (KES)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for alloc in allocations %}
+            <tr>
+                <td>
+                    {{ alloc.category.name }}
+                    {% if alloc.custom_description %}<br><small><i>{{ alloc.custom_description }}</i></small>{% endif %}
+                </td>
+                <td style="text-align: right;">{{ alloc.amount }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td><strong>Total</strong></td>
+                <td style="text-align: right;" class="total">KES {{ transaction.total_amount }}</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

@@ -23,7 +23,7 @@ export default function ProfilePage() {
     if (!token) return;
 
     // Fetch current profile details
-    fetch('http://localhost:8000/api/auth/profile/', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile/`, {
       headers: { 'Authorization': `Token ${token}` }
     })
       .then(res => res.json())
@@ -40,7 +40,7 @@ export default function ProfilePage() {
   // Fetch stations when modal opens
   const openChurchModal = () => {
     setIsModalOpen(true);
-    fetch('http://localhost:8000/api/stations/')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stations/`)
       .then(res => res.json())
       .then(data => setStations(data.results || data));
   };
@@ -48,7 +48,7 @@ export default function ProfilePage() {
   // Fetch districts when station changes
   useEffect(() => {
     if (selectedStation) {
-      fetch(`http://localhost:8000/api/districts/?station_id=${selectedStation}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/districts/?station_id=${selectedStation}`)
         .then(res => res.json())
         .then(data => setDistricts(data.results || data));
     } else {
@@ -60,7 +60,7 @@ export default function ProfilePage() {
   // Fetch churches when district changes
   useEffect(() => {
     if (selectedDistrict) {
-      fetch(`http://localhost:8000/api/churches/?district_id=${selectedDistrict}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/churches/?district_id=${selectedDistrict}`)
         .then(res => res.json())
         .then(data => setChurches(data.results || data));
     } else {
@@ -73,7 +73,7 @@ export default function ProfilePage() {
     e.preventDefault();
     const token = localStorage.getItem('token');
 
-    const res = await fetch('http://localhost:8000/api/auth/update-church/', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-church/`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

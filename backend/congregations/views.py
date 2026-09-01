@@ -1,10 +1,18 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework.authtoken.models import Token
 from .models import MemberProfile, Station, District, LocalChurch
 from .serializers import StationSerializer, DistrictSerializer, LocalChurchSerializer
+from django.db import transaction
+
+# Custom permission: Anyone can read, only superusers can write
+class IsSuperUserOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user and request.user.is_superuser
 
 class RequestOTPView(APIView):
     permission_classes = [] # Allow anonymous access
@@ -63,51 +71,25 @@ class DistrictListView(generics.ListAPIView):
             queryset = queryset.filter(station_id=station_id)
         return queryset
 
-class LocalChurchListView(generics.ListAPIView):
+class LocalChurchListCreateView(generics.ListCreateAPIView):
     serializer_class = LocalChurchSerializer
+    permission_classes = [IsSuperUserOrReadOnly]
     
     def get_queryset(self):
-        queryset = LocalChurch.objects.filter(is_active=True)
+        queryset = LocalChurch.objects.all().order_by('name')
         # Allow the frontend to filter: /api/churches/?district_id=1
         district_id = self.request.query_params.get('district_id')
         if district_id:
             queryset = queryset.filter(district_id=district_id)
         return queryset
 
-class InitiatePaymentView(APIView):
-    permission_classes = [permissions.IsAuthenticated] # Secure the endpoint
+# Add a new DetailView for updates/deletions
+class LocalChurchDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = LocalChurch.objects.all()
+    serializer_class = LocalChurchSerializer
+    permission_classes = [IsSuperUserOrReadOnly]
 
-    def post(self, request):
-        amount = request.data.get('amount')
-        phone = request.data.get('phone')
-        email = request.data.get('email', f"{phone}@nyamiraconference.org")
-        
-        if not amount or not phone:
-            return Response({'error': 'Amount and phone number are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        reference = generate_reference()
-        paystack_response = initialize_paystack_payment(email, float(amount), reference)
-
-        if paystack_response.get('status'):
-            # Get the user's church if they have a profile
-            church = request.user.profile.local_church if hasattr(request.user, 'profile') else None
-
-            Transaction.objects.create(
-                user=request.user, # THIS CAPTURES THE USER IN THE DB
-                local_church=church, # Links payment to their church
-                total_amount=amount,
-                phone_number=phone,
-                paystack_reference=reference,
-                email=email,
-                status='PENDING'
-            )
-
-            return Response({
-                'authorization_url': paystack_response['data']['authorization_url'],
-                'reference': reference
-            }, status=status.HTTP_200_OK)
-        
-        return Response({'error': 'Paystack initialization failed'}, status=status.HTTP_400_BAD_REQUEST)
 
 class StaffLoginView(APIView):
     permission_classes = []
@@ -222,3 +204,66 @@ class UpdateMemberChurchView(APIView):
             }, status=status.HTTP_200_OK)
         except LocalChurch.DoesNotExist:
             return Response({'error': 'Church not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class LocalChurchSerializer(serializers.ModelSerializer):
+    district_name = serializers.CharField(source='district.name', read_only=True)
+    station_name = serializers.CharField(source='district.station.name', read_only=True)
+    
+    class Meta:
+        model = LocalChurch
+        fields = ['id', 'name', 'district', 'district_name', 'station_name', 'is_active']
+
+User = get_user_model()
+
+class StaffUserManagementView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_superuser:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        staff = User.objects.filter(is_staff=True).select_related('profile__local_church')
+        data = []
+        for s in staff:
+            profile = getattr(s, 'profile', None)
+            data.append({
+                'id': s.id,
+                'phone_number': s.phone_number,
+                'email': s.email,
+                'first_name': profile.first_name if profile else '',
+                'last_name': profile.last_name if profile else '',
+                'role': 'CONFERENCE_ADMIN' if s.is_superuser else 'LOCAL_CLERK',
+                'church_name': profile.local_church.name if profile and profile.local_church else 'Conference HQ',
+                'is_active': s.is_active
+            })
+        return Response(data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        if not request.user.is_superuser:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        try:
+            with transaction.atomic():
+                user = User.objects.create(
+                    phone_number=data.get('phone_number'),
+                    email=data.get('email'),
+                    is_staff=True,
+                    is_superuser=(data.get('role') == 'CONFERENCE_ADMIN')
+                )
+                user.set_password(data.get('password'))
+                user.save()
+
+                church_id = data.get('church_id')
+                church = LocalChurch.objects.filter(id=church_id).first() if church_id else None
+                
+                MemberProfile.objects.create(
+                    user=user,
+                    first_name=data.get('first_name', ''),
+                    last_name=data.get('last_name', ''),
+                    local_church=church
+                )
+            return Response({'message': 'Staff created successfully'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -44,7 +44,7 @@ class Transaction(models.Model):
     phone_number = models.CharField(_('payment phone number'), max_length=15)
     paystack_reference = models.CharField(_('Paystack Reference'), max_length=100, unique=True, default=uuid.uuid4)
     email = models.EmailField(_('email'), blank=True, null=True) # Paystack requires an email
-    receipt_pdf = models.FileField(_('receipt PDF'), upload_to='receipts/', blank=True, null=True)
+    receipt_file = models.FileField(upload_to='receipts/', null=True, blank=True)
     status = models.CharField(
         _('status'), 
         max_length=20, 

@@ -3,10 +3,10 @@ import { useState, useMemo } from 'react';
 import { Download, Search, Filter } from 'lucide-react';
 import Papa from 'papaparse';
 import { 
-  useReactTable, 
-  getCoreRowModel, 
-  getSortedRowModel,
-  getFilteredRowModel,
+  useTable, 
+  createCoreRowModel, 
+  createSortedRowModel,
+  createFilteredRowModel,
   flexRender, 
   createColumnHelper 
 } from '@tanstack/react-table';
@@ -26,7 +26,7 @@ const mockData: Transaction[] = [
   { paystack_reference: 'NC-M4N5O6P7', total_amount: 3500, status: 'FAILED', created_at: '2026-08-30T09:15:00Z', church: 'Kebirigo', category: 'Camp Meeting' },
 ];
 
-const columnHelper = createColumnHelper<Transaction>();
+const columnHelper = createColumnHelper<any, any>();
 
 const columns = [
   columnHelper.accessor('paystack_reference', {
@@ -59,15 +59,15 @@ const columns = [
 export default function ReconciliationPage() {
   const [globalFilter, setGlobalFilter] = useState('');
   
-  const table = useReactTable({
+  const table = useTable({
     data: mockData,
-    columns,
+    columns: columns as any,
     state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  });
+    getCoreRowModel: createCoreRowModel(),
+    getSortedRowModel: createSortedRowModel(),
+    getFilteredRowModel: createFilteredRowModel(),
+  } as any);
 
   const exportToCSV = () => {
     const csvData = mockData.map(t => ({

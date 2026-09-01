@@ -1,20 +1,25 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Loader2, ArrowLeft, CheckSquare, Square } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ArrowLeft, CheckSquare, Square, Download } from 'lucide-react';
 import Link from 'next/link';
 
 export default function GivePage() {
-  const [view, setView] = useState<'categories' | 'amounts' | 'wait' | 'receipt'>('categories');
+  const [view, setView] = useState<'categories' | 'amounts' | 'wait' | 'receipt' | 'failed'>('categories');
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [amounts, setAmounts] = useState<Record<string, any>>({});
   const [dbCategories, setDbCategories] = useState<any[]>([]);
 
+  // Tracking state for polling
+  const [currentRef, setCurrentRef] = useState<string | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [pollCount, setPollCount] = useState(0);
+
   // 1. Fetch real categories from Django on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    fetch('http://localhost:8000/api/categories/', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/`, {
       headers: { 'Authorization': `Token ${token}` }
     })
       .then(res => res.json())
@@ -38,10 +43,12 @@ export default function GivePage() {
   // 2. Submit the payload to Django
   const handlePaymentSubmit = async () => {
     setView('wait');
-    const token = localStorage.getItem('token');
+    setPollCount(0);
+    setCurrentRef(null);
     
+    const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/api/payments/initiate/', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/initiate/`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -49,21 +56,69 @@ export default function GivePage() {
         },
         body: JSON.stringify({
           amount: totalAmount,
-          allocations: amounts // Sends exactly {"1": "5000", "2": "1000"}
+          allocations: amounts
         })
       });
       
-      if (res.ok) {
-        // Start waiting for the webhook to update the status to COMPLETED
-        setTimeout(() => setView('receipt'), 5000); 
+      const data = await res.json();
+      if (res.ok && data.reference) {
+        setCurrentRef(data.reference); // Save reference to start polling
       } else {
-        console.error("Payment initiation failed");
-        setView('amounts');
+        setView('failed');
       }
     } catch (error) {
       console.error(error);
-      setView('amounts');
+      setView('failed');
     }
+  };
+
+  // Polling Effect: Checks backend every 2.5 seconds
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (view === 'wait' && currentRef) {
+      interval = setInterval(async () => {
+        // Timeout after ~60 seconds (24 polls * 2.5s)
+        if (pollCount >= 24) {
+          setView('failed');
+          clearInterval(interval);
+          return;
+        }
+        
+        setPollCount(prev => prev + 1);
+        const token = localStorage.getItem('token');
+
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/status/${currentRef}/`, {
+            headers: { 'Authorization': `Token ${token}` }
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            
+            if (data.status === 'COMPLETED') {
+              setReceiptUrl(data.receipt_url);
+              setView('receipt');
+              clearInterval(interval);
+            } else if (data.status === 'FAILED') {
+              setView('failed');
+              clearInterval(interval);
+            }
+            // If PENDING, the interval continues running
+          }
+        } catch (error) {
+          console.error("Polling error", error);
+        }
+      }, 2500);
+    }
+
+    return () => clearInterval(interval);
+  }, [view, currentRef, pollCount]);
+
+  const handleRetry = () => {
+    setView('amounts');
+    setPollCount(0);
+    setCurrentRef(null);
   };
 
   return (
@@ -180,43 +235,69 @@ export default function GivePage() {
         )}
         
         {view === 'wait' && (
-          <div className="py-12 flex flex-col items-center text-center">
-            <Loader2 className="w-12 h-12 text-[#0F6E56] animate-spin mb-6" />
+          <div className="text-center py-12 max-w-sm mx-auto">
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 border-4 border-green-100 rounded-full animate-ping"></div>
+              <div className="absolute inset-0 flex items-center justify-center bg-green-50 rounded-full text-[#0F6E56]">
+                <Loader2 className="w-10 h-10 animate-spin" />
+              </div>
+            </div>
             <h2 className="text-2xl font-bold text-[#232420] mb-2">Check your phone</h2>
-            <p className="text-[#6B6A62] max-w-xs">
-              An M-Pesa prompt has been sent to your phone. Enter your PIN to complete the transaction.
+            <p className="text-[#6B6A62] mb-6">
+              An M-Pesa prompt has been sent to your phone. Please enter your PIN to complete the transaction.
             </p>
-            <button onClick={() => setView('amounts')} className="mt-8 text-sm text-[#A32D2D] hover:underline">
-              Cancel payment
+            <p className="text-xs text-[#185FA5] animate-pulse">Waiting for confirmation...</p>
+          </div>
+        )}
+
+        {view === 'failed' && (
+          <div className="text-center py-12 max-w-sm mx-auto animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-red-50 text-[#A32D2D] rounded-full flex items-center justify-center mx-auto mb-6">
+              <XCircle className="w-10 h-10" />
+            </div>
+            <h2 className="text-2xl font-bold text-[#232420] mb-2">Payment Failed</h2>
+            <p className="text-[#6B6A62] mb-8">
+              The transaction was cancelled or timed out. Your account has not been charged.
+            </p>
+            
+            <button 
+              onClick={handleRetry}
+              className="w-full bg-[#232420] text-white py-4 rounded-[8px] font-medium hover:bg-black transition-colors"
+            >
+              Try Again
             </button>
           </div>
         )}
-        
-        {view === 'receipt' && (
-          <div className="py-8 flex flex-col items-center text-center">
-            <CheckCircle2 className="w-16 h-16 text-[#0F6E56] mb-6" />
-            <h2 className="text-2xl font-bold text-[#232420] mb-2">Payment Received</h2>
-            
-            <div className="w-full max-w-sm bg-[#FAF9F6] border border-[#E4E1D8] rounded-[8px] p-4 text-left mb-8 mt-6">
-              <div className="border-b border-[#E4E1D8] pb-3 mb-3">
-                <div className="flex justify-between items-end">
-                  <span className="text-[#6B6A62] text-sm">Total Paid</span>
-                  <span className="font-bold text-[#232420] text-lg">KES {totalAmount.toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                {selectedIds.map(id => (
-                  <div key={id} className="flex justify-between">
-                    <span className="text-[#6B6A62]">{dbCategories.find(c => c.id.toString() === id)?.name}</span>
-                    <span className="font-medium text-[#232420]">KES {amounts[id]?.amount || '0'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            <Link href="/member/dashboard" className="w-full max-w-sm bg-[#0F6E56] text-white py-3 rounded-[8px] font-medium hover:bg-[#085041] inline-flex justify-center">
-              Done
-            </Link>
+        {view === 'receipt' && (
+          <div className="text-center py-12 max-w-sm mx-auto animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-green-50 text-[#0F6E56] rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <h2 className="text-2xl font-bold text-[#232420] mb-2">Offering Received!</h2>
+            <p className="text-[#6B6A62] mb-8">
+              Your giving of KES {totalAmount.toLocaleString()} has been recorded. May God bless you.
+            </p>
+            
+            <div className="space-y-3">
+              {receiptUrl && (
+                <a 
+                  href={receiptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 border-2 border-[#0F6E56] text-[#0F6E56] py-3.5 rounded-[8px] font-medium hover:bg-green-50 transition-colors"
+                >
+                  <Download className="w-4 h-4" /> Download PDF Receipt
+                </a>
+              )}
+              
+              <Link 
+                href="/member/dashboard"
+                className="block w-full bg-[#0F6E56] text-white py-3.5 rounded-[8px] font-medium hover:bg-[#085041] transition-colors"
+              >
+                Return to Dashboard
+              </Link>
+            </div>
           </div>
         )}
       </div>
