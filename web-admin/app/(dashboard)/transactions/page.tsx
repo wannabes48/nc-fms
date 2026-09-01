@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Search, Filter, ChevronLeft, ChevronRight, Eye, X, ReceiptText, User, Download } from 'lucide-react';
 
 export default function TransactionsPage() {
@@ -88,16 +89,19 @@ export default function TransactionsPage() {
               className="w-full pl-9 pr-4 py-2 text-sm rounded-[8px] border border-[#E4E1D8] focus:border-[#0F6E56] outline-none"
             />
           </div>
-          <select 
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="py-2 pl-3 pr-8 text-sm rounded-[8px] border border-[#E4E1D8] focus:border-[#0F6E56] outline-none appearance-none bg-white"
-          >
-            <option value="ALL">All Status</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="PENDING">Pending</option>
-            <option value="FAILED">Failed</option>
-          </select>
+          <div className="w-40">
+            <CustomSelect 
+              value={statusFilter}
+              onChange={(val) => { setStatusFilter(val); setPage(1); }}
+              options={[
+                { value: 'ALL', label: 'All Status' },
+                { value: 'COMPLETED', label: 'Completed' },
+                { value: 'PENDING', label: 'Pending' },
+                { value: 'FAILED', label: 'Failed' }
+              ]}
+              className="text-sm"
+            />
+          </div>
           
           <button 
             onClick={handleExportCSV}

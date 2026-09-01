@@ -9,7 +9,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Inter", "IBM Plex Sans", sans-serif;
+  --font-sans: "Valley Sans", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 

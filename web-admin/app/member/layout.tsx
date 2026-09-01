@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogOut, User } from 'lucide-react';
 import LanguageSelector from '@/components/LanguageSelector';
+import Image from 'next/image';
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       <header className="bg-white border-b border-[#E4E1D8] h-16 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-10">
         <Link href="/member/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="w-8 h-8 bg-[#0F6E56] rounded-full flex items-center justify-center text-white font-bold text-sm">
-            SDA
+            <Image src="/logo.png" alt="CFMS Logo" width={120} height={40} priority />
           </div>
           <span className="font-semibold text-[#232420] hidden sm:block">Nyamira Conference</span>
         </Link>

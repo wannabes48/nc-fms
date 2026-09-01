@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Plus, Shield, User, X, Mail, Phone } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useRouter } from 'next/navigation';
 
 export default function UsersPage() {
@@ -160,19 +161,25 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#232420] mb-1">Role</label>
-                <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-4 py-2 border border-[#E4E1D8] rounded-[8px] focus:border-[#0F6E56] outline-none">
-                  <option value="LOCAL_CLERK">Local Clerk</option>
-                  <option value="CONFERENCE_ADMIN">Conference Admin</option>
-                </select>
+                <CustomSelect 
+                  value={formData.role} 
+                  onChange={val => setFormData({...formData, role: val})} 
+                  options={[
+                    { value: 'LOCAL_CLERK', label: 'Local Clerk' },
+                    { value: 'CONFERENCE_ADMIN', label: 'Conference Admin' }
+                  ]}
+                />
               </div>
 
               {formData.role === 'LOCAL_CLERK' && (
                 <div>
                   <label className="block text-sm font-medium text-[#232420] mb-1">Assign Local Church</label>
-                  <select required value={formData.church_id} onChange={e => setFormData({...formData, church_id: e.target.value})} className="w-full px-4 py-2 border border-[#E4E1D8] rounded-[8px] focus:border-[#0F6E56] outline-none">
-                    <option value="">Select Church...</option>
-                    {churches.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <CustomSelect 
+                    value={formData.church_id} 
+                    onChange={val => setFormData({...formData, church_id: val})} 
+                    placeholder="Select Church..."
+                    options={churches.map(c => ({ value: String(c.id), label: c.name }))}
+                  />
                 </div>
               )}
 

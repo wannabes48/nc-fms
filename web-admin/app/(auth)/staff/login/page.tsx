@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Lock } from 'lucide-react';
+import Image from 'next/image';
 
 export default function StaffLogin() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function StaffLogin() {
       <div className="hidden lg:flex w-1/2 bg-[#0F6E56] text-white flex-col justify-between p-12">
         <div>
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#0F6E56] font-bold text-xl mb-6">
-            SDA
+            <Image src="/logo.png" alt="CFMS Logo" width={120} height={40} priority />
           </div>
           <h1 className="text-4xl font-bold mb-4">Nyamira Conference</h1>
           <p className="text-blue-100 text-lg max-w-md">

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { User, Church, Phone, LogOut, ArrowLeft, X } from 'lucide-react';
 import Link from 'next/link';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
@@ -168,41 +169,35 @@ export default function ProfilePage() {
             <form onSubmit={handleChurchUpdate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#232420] mb-2">Station</label>
-                <select 
+                <CustomSelect 
                   value={selectedStation} 
-                  onChange={(e) => { setSelectedStation(e.target.value); setSelectedDistrict(''); setSelectedChurch(''); }}
-                  className="w-full px-4 py-3 rounded-[8px] border border-[#E4E1D8] focus:border-[#0F6E56] outline-none text-[#232420]" required
-                >
-                  <option value="">Select Station</option>
-                  {stations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                  onChange={(val) => { setSelectedStation(val); setSelectedDistrict(''); setSelectedChurch(''); }}
+                  placeholder="Select Station"
+                  options={stations.map(s => ({ value: String(s.id), label: s.name }))}
+                />
               </div>
 
               {selectedStation && (
                 <div>
                   <label className="block text-sm font-medium text-[#232420] mb-2">District</label>
-                  <select 
+                  <CustomSelect 
                     value={selectedDistrict} 
-                    onChange={(e) => { setSelectedDistrict(e.target.value); setSelectedChurch(''); }}
-                    className="w-full px-4 py-3 rounded-[8px] border border-[#E4E1D8] focus:border-[#0F6E56] outline-none text-[#232420]" required
-                  >
-                    <option value="">Select District</option>
-                    {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
+                    onChange={(val) => { setSelectedDistrict(val); setSelectedChurch(''); }}
+                    placeholder="Select District"
+                    options={districts.map(d => ({ value: String(d.id), label: d.name }))}
+                  />
                 </div>
               )}
 
               {selectedDistrict && (
                 <div>
                   <label className="block text-sm font-medium text-[#232420] mb-2">Local Church</label>
-                  <select 
+                  <CustomSelect 
                     value={selectedChurch} 
-                    onChange={(e) => setSelectedChurch(e.target.value)}
-                    className="w-full px-4 py-3 rounded-[8px] border border-[#E4E1D8] focus:border-[#0F6E56] outline-none text-[#232420]" required
-                  >
-                    <option value="">Select Church</option>
-                    {churches.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                    onChange={(val) => setSelectedChurch(val)}
+                    placeholder="Select Church"
+                    options={churches.map(c => ({ value: String(c.id), label: c.name }))}
+                  />
                 </div>
               )}
 

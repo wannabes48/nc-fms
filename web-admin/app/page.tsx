@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { HeartHandshake, ShieldCheck, PieChart, ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
@@ -8,7 +9,7 @@ export default function LandingPage() {
       <header className="bg-[#0F6E56] text-white py-4 px-6 md:px-12 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#0F6E56] font-bold text-xl">
-            SDA
+            <Image src="/logo.png" alt="CFMS Logo" width={120} height={40} priority />
           </div>
           <div>
             <h1 className="text-lg font-bold leading-tight">Nyamira Conference</h1>

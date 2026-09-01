@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Plus, Edit2, X, Church, Search } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useRouter } from 'next/navigation';
 
 export default function ChurchesPage() {
@@ -190,29 +191,23 @@ export default function ChurchesPage() {
               {!editingId && (
                 <div>
                   <label className="block text-sm font-medium text-[#232420] mb-1">Filter by Station</label>
-                  <select 
+                  <CustomSelect 
                     value={selectedStation} 
-                    onChange={(e) => setSelectedStation(e.target.value)}
-                    className="w-full px-4 py-2 border border-[#E4E1D8] rounded-[8px] focus:border-[#0F6E56] outline-none"
-                  >
-                    <option value="">Select Station...</option>
-                    {stations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                    onChange={(val) => setSelectedStation(val)}
+                    placeholder="Select Station..."
+                    options={stations.map(s => ({ value: String(s.id), label: s.name }))}
+                  />
                 </div>
               )}
 
               <div>
                 <label className="block text-sm font-medium text-[#232420] mb-1">Assign to District</label>
-                <select 
-                  required
-                  value={formData.district} 
-                  onChange={(e) => setFormData({...formData, district: e.target.value})}
-                  className="w-full px-4 py-2 border border-[#E4E1D8] rounded-[8px] focus:border-[#0F6E56] outline-none"
-                >
-                  <option value="">Select District...</option>
-                  {/* If editing, we just show a generic prompt or pre-fetch districts. For now, rely on dynamic fetch. */}
-                  {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
+                <CustomSelect 
+                  value={String(formData.district)} 
+                  onChange={(val) => setFormData({...formData, district: val})}
+                  placeholder="Select District..."
+                  options={districts.map(d => ({ value: String(d.id), label: d.name }))}
+                />
               </div>
 
               <div className="flex items-center gap-2 pt-2">

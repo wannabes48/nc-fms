@@ -11,21 +11,27 @@ const config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['"Valley Sans"', 'sans-serif'],
       },
       colors: {
-        // Nyamira Conference Shared Design Language (Deep Green)
-        brand: {
-          DEFAULT: '#0F6E56', // primary
-          hover: '#085041',   // primary-hover
-          accent: '#185FA5',  // accent
-          warning: '#BA7517', // warning
-          danger: '#A32D2D',  // danger
-          bg: '#FAF9F6',      // bg
-          surface: '#FFFFFF', // surface
-          border: '#E4E1D8',  // border
+        primary: {
+          DEFAULT: '#0F6E56',
+          hover: '#085041',
         },
-        // ... shadcn default colors
+        accent: '#185FA5',
+        warning: '#BA7517',
+        danger: '#A32D2D',
+        bg: '#FAF9F6',
+        surface: '#FFFFFF',
+        border: '#E4E1D8',
+        'text-primary': '#232420',
+        'text-secondary': '#6B6A62',
+      },
+      borderRadius: {
+        card: '12px',
+        btn: '8px',
+        input: '8px',
+        pill: '9999px',
       },
     },
   },
