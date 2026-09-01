@@ -97,7 +97,21 @@ export default function GivePage() {
             const data = await res.json();
             
             if (data.status === 'COMPLETED') {
-              setReceiptUrl(data.receipt_url);
+              // 1. Transaction confirmed! Now securely fetch the PDF Blob
+              try {
+                const pdfRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/payments/receipt/${currentRef}/`, {
+                  headers: { 'Authorization': `Token ${token}` }
+                });
+                
+                if (pdfRes.ok) {
+                  const blob = await pdfRes.blob();
+                  const blobUrl = window.URL.createObjectURL(blob);
+                  setReceiptUrl(blobUrl); // Save the local blob URL to state
+                }
+              } catch (err) {
+                console.error("Failed to load PDF", err);
+              }
+
               setView('receipt');
               clearInterval(interval);
             } else if (data.status === 'FAILED') {
@@ -270,30 +284,44 @@ export default function GivePage() {
         )}
 
         {view === 'receipt' && (
-          <div className="text-center py-12 max-w-sm mx-auto animate-in fade-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-green-50 text-[#0F6E56] rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-10 h-10" />
+          <div className="text-center py-8 max-w-lg mx-auto animate-in fade-in zoom-in duration-300">
+            <div className="w-16 h-16 bg-green-50 text-[#0F6E56] rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
             <h2 className="text-2xl font-bold text-[#232420] mb-2">Offering Received!</h2>
-            <p className="text-[#6B6A62] mb-8">
-              Your giving of KES {totalAmount.toLocaleString()} has been recorded. May God bless you.
+            <p className="text-sm text-[#6B6A62] mb-6">
+              Your giving of KES {totalAmount.toLocaleString()} has been securely recorded.
             </p>
+            
+            {receiptUrl ? (
+              <div className="mb-6 rounded-[8px] overflow-hidden border border-[#E4E1D8] shadow-sm">
+                {/* INLINE PDF VIEWER */}
+                <iframe 
+                  src={receiptUrl} 
+                  className="w-full h-80 bg-[#FAF9F6]"
+                  title="Transaction Receipt"
+                />
+              </div>
+            ) : (
+              <div className="mb-6 p-4 text-sm text-[#6B6A62] bg-[#FAF9F6] rounded-[8px] border border-[#E4E1D8]">
+                Generating receipt...
+              </div>
+            )}
             
             <div className="space-y-3">
               {receiptUrl && (
                 <a 
                   href={receiptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 border-2 border-[#0F6E56] text-[#0F6E56] py-3.5 rounded-[8px] font-medium hover:bg-green-50 transition-colors"
+                  download={`NC_Receipt_${currentRef}.pdf`}
+                  className="w-full flex items-center justify-center gap-2 bg-[#0F6E56] text-white py-3.5 rounded-[8px] font-medium hover:bg-[#085041] transition-colors"
                 >
-                  <Download className="w-4 h-4" /> Download PDF Receipt
+                  <Download className="w-4 h-4" /> Download PDF
                 </a>
               )}
               
               <Link 
                 href="/member/dashboard"
-                className="block w-full bg-[#0F6E56] text-white py-3.5 rounded-[8px] font-medium hover:bg-[#085041] transition-colors"
+                className="block w-full border-2 border-[#E4E1D8] text-[#232420] py-3.5 rounded-[8px] font-medium hover:bg-[#FAF9F6] transition-colors"
               >
                 Return to Dashboard
               </Link>

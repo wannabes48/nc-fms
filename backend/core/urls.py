@@ -3,7 +3,7 @@ from django.urls import path
 
 from congregations.views import LocalChurchListCreateView, LocalChurchDetailView
 from finance.views import OfferingCategoryListView, TransactionHistoryView
-from payments.views import InitiatePaymentView, PaystackWebhookView, AnalyticsAPIView, TransactionListView, TransactionExportCSVView, CategoryListCreateView, CategoryDetailView, TransactionStatusView
+from payments.views import InitiatePaymentView, PaystackWebhookView, AnalyticsAPIView, TransactionListView, TransactionExportCSVView, CategoryListCreateView, CategoryDetailView, TransactionStatusView, ReceiptDownloadView
 from congregations.views import StationListView, DistrictListView, RequestOTPView, VerifyOTPView, StaffLoginView, MemberProfileView, UpdateProfileView, UpdateMemberChurchView, StaffUserManagementView
 
 urlpatterns = [
@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/transactions/history/', TransactionHistoryView.as_view(), name='transaction-history'),
     path('api/payments/initiate/', InitiatePaymentView.as_view(), name='initiate-payment'),
     path('api/payments/status/<str:reference>/', TransactionStatusView.as_view(), name='payment-status'),
+    path('api/payments/receipt/<str:reference>/', ReceiptDownloadView.as_view(), name='download-receipt'),
     path('api/payments/webhook/', PaystackWebhookView.as_view(), name='paystack-webhook'),
     path('api/auth/staff-login/', StaffLoginView.as_view(), name='staff-login'),
     path('api/analytics/', AnalyticsAPIView.as_view(), name='dashboard-analytics'),

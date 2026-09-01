@@ -14,8 +14,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions, generics, serializers
 from finance.models import Transaction, TransactionAllocation, OfferingCategory
-from finance.utils import generate_receipt_pdf
 from .utils import trigger_mpesa_stk, generate_reference
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
@@ -135,16 +136,9 @@ class PaystackWebhookView(APIView):
                         
                         # Idempotency check: only process if not already completed
                         if transaction.status != 'COMPLETED':
-                            # 1. ALWAYS save the completed status first
                             transaction.status = 'COMPLETED'
                             transaction.save()
-                            
-                            # 2. Safely attempt the PDF generation
-                            try:
-                                generate_receipt_pdf(transaction.id)
-                                print(f"SUCCESS: Transaction {reference} completed and PDF generated.")
-                            except Exception as e:
-                                print(f"WARNING: Transaction {reference} completed, but PDF failed: {e}")
+                            print(f"SUCCESS: Transaction {reference} completed.")
                         else:
                             print(f"Transaction {reference} already processed.")
                             
@@ -280,32 +274,69 @@ class TransactionExportCSVView(APIView):
 
         status_param = request.query_params.get('status', None)
         if status_param and status_param != 'ALL':
-            queryset = queryset.filter(status=status_param)
+            transactions = transactions.filter(status=status_param)
 
         # 3. Setup CSV Response
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="treasury_export.csv"'
-
+        response['Content-Disposition'] = 'attachment; filename="transactions.csv"'
+        
         writer = csv.writer(response)
-        # Write Header Row
-        writer.writerow(['Reference', 'Date', 'Member Name', 'Phone Number', 'Church', 'Status', 'Total Amount'])
-
-        # Write Data Rows
-        for tx in queryset:
-            member_name = f"{tx.user.profile.first_name} {tx.user.profile.last_name}".strip() if hasattr(tx.user, 'profile') else "Guest"
-            church_name = tx.local_church.name if tx.local_church else "Conference"
+        writer.writerow(['Reference', 'Date', 'Member', 'Phone', 'Church', 'Category', 'Amount (KES)', 'Status'])
+        
+        for t in transactions:
+            member = f"{t.user.profile.first_name} {t.user.profile.last_name}" if hasattr(t.user, 'profile') else "Guest"
+            church = t.user.profile.church.name if hasattr(t.user.profile, 'church') and t.user.profile.church else ""
+            category = ", ".join([alloc.category.name for alloc in t.allocations.all()])
             
             writer.writerow([
-                tx.paystack_reference,
-                tx.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                member_name,
-                tx.phone_number,
-                church_name,
-                tx.status,
-                float(tx.total_amount)
+                t.paystack_reference,
+                t.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                member,
+                t.phone_number,
+                church,
+                category,
+                t.total_amount,
+                t.status
             ])
-
+            
         return response
+
+
+class ReceiptDownloadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, reference):
+        try:
+            # Ensure the user only accesses their own receipt
+            transaction = Transaction.objects.get(paystack_reference=reference, user=request.user)
+            
+            if transaction.status != 'COMPLETED':
+                return HttpResponse("Transaction not completed", status=400)
+
+            template = get_template('receipts/receipt_template.html')
+            member_name = f"{transaction.user.profile.first_name} {transaction.user.profile.last_name}".strip() if hasattr(transaction.user, 'profile') else "Guest"
+            
+            context = {
+                'transaction': transaction,
+                'member_name': member_name,
+                'allocations': transaction.allocations.all()
+            }
+            html = template.render(context)
+            
+            # Create the HTTP response with PDF headers
+            response = HttpResponse(content_type='application/pdf')
+            # 'inline' allows the browser to display it in an iframe
+            response['Content-Disposition'] = f'inline; filename="NC_Receipt_{reference}.pdf"'
+            
+            # Generate PDF directly into the response
+            pisa_status = pisa.CreatePDF(html, dest=response)
+            
+            if pisa_status.err:
+                return HttpResponse('Error generating PDF', status=500)
+            return response
+            
+        except Transaction.DoesNotExist:
+            return HttpResponse("Transaction not found", status=404)
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
