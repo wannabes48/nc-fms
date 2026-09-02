@@ -11,6 +11,7 @@ export default function MemberLogin() {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // Form data for church selection
@@ -59,6 +60,7 @@ export default function MemberLogin() {
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/request-otp/`, {
         method: 'POST',
@@ -68,11 +70,14 @@ export default function MemberLogin() {
       setStep('otp');
     } catch (error) {
       console.error('Failed to request OTP', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-otp/`, {
         method: 'POST',
@@ -92,11 +97,14 @@ export default function MemberLogin() {
       }
     } catch (error) {
       console.error('Failed to verify OTP', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSaveChurch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     const token = localStorage.getItem('token');
     
     try {
@@ -111,24 +119,33 @@ export default function MemberLogin() {
       router.push('/member/dashboard');
     } catch (error) {
       console.error('Failed to save church', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSaveNames = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     const token = localStorage.getItem('token');
     
-    // Save names to Django profile backend
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-profile/`, {
-      method: 'PATCH',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`
-      },
-      body: JSON.stringify({ first_name: firstName, last_name: lastName })
-    });
+    try {
+      // Save names to Django profile backend
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-profile/`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`
+        },
+        body: JSON.stringify({ first_name: firstName, last_name: lastName })
+      });
 
-    setStep('church_select');
+      setStep('church_select');
+    } catch (error) {
+      console.error('Failed to save names', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -159,7 +176,23 @@ export default function MemberLogin() {
                 />
               </div>
             </div>
-            <button type="submit" className="w-full bg-[#0F6E56] text-white py-3 rounded-[8px] font-medium hover:bg-[#085041]">Send code</button>
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className={`w-full flex justify-center items-center gap-2 py-3 rounded-[8px] font-medium transition-colors ${
+                isLoading ? 'bg-[#A5D6A7] text-white cursor-not-allowed' : 'bg-[#0F6E56] text-white hover:bg-[#085041]'
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Sending...
+                </>
+              ) : 'Send code'}
+            </button>
           </form>
         )}
 
@@ -180,7 +213,23 @@ export default function MemberLogin() {
                 required
               />
             </div>
-            <button type="submit" className="w-full bg-[#0F6E56] text-white py-3 rounded-[8px] font-medium hover:bg-[#085041]">Verify & Log In</button>
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className={`w-full flex justify-center items-center gap-2 py-3 rounded-[8px] font-medium transition-colors ${
+                isLoading ? 'bg-[#A5D6A7] text-white cursor-not-allowed' : 'bg-[#0F6E56] text-white hover:bg-[#085041]'
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verifying...
+                </>
+              ) : 'Verify & Log In'}
+            </button>
           </form>
         )}
 
@@ -213,7 +262,23 @@ export default function MemberLogin() {
                 />
               </div>
             </div>
-            <button type="submit" className="w-full bg-[#0F6E56] text-white py-3 rounded-[8px] font-medium hover:bg-[#085041]">Continue</button>
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className={`w-full flex justify-center items-center gap-2 py-3 rounded-[8px] font-medium transition-colors ${
+                isLoading ? 'bg-[#A5D6A7] text-white cursor-not-allowed' : 'bg-[#0F6E56] text-white hover:bg-[#085041]'
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : 'Continue'}
+            </button>
           </form>
         )}
 
@@ -267,10 +332,20 @@ export default function MemberLogin() {
 
             <button 
               type="submit" 
-              disabled={!selectedChurch}
-              className="w-full bg-[#0F6E56] text-white py-3 rounded-[8px] font-medium hover:bg-[#085041] transition-colors disabled:opacity-50"
+              disabled={!selectedChurch || isLoading}
+              className={`w-full flex justify-center items-center gap-2 py-3 rounded-[8px] font-medium transition-colors ${
+                (!selectedChurch || isLoading) ? 'bg-[#A5D6A7] text-white cursor-not-allowed' : 'bg-[#0F6E56] text-white hover:bg-[#085041]'
+              }`}
             >
-              Continue to Dashboard
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : 'Continue to Dashboard'}
             </button>
           </form>
         )}

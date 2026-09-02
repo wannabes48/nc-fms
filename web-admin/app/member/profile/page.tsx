@@ -11,6 +11,7 @@ export default function ProfilePage() {
   
   // Modal States for Church Transfer
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [stations, setStations] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [churches, setChurches] = useState<any[]>([]);
@@ -72,21 +73,30 @@ export default function ProfilePage() {
 
   const handleChurchUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const token = localStorage.getItem('token');
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-church/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`
-      },
-      body: JSON.stringify({ local_church_id: selectedChurch })
-    });
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-church/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`
+        },
+        body: JSON.stringify({ local_church_id: selectedChurch })
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      setProfile(prev => prev ? { ...prev, church: data.church_name } : null);
-      setIsModalOpen(false);
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(prev => prev ? { ...prev, church: data.church_name } : null);
+        setIsModalOpen(false);
+      } else {
+        console.error('Failed to update church');
+      }
+    } catch (error) {
+      console.error('Error updating church', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -205,8 +215,22 @@ export default function ProfilePage() {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 border border-[#E4E1D8] py-3 rounded-[8px] text-sm font-medium hover:bg-[#FAF9F6] text-[#232420]">
                   Cancel
                 </button>
-                <button type="submit" disabled={!selectedChurch} className="flex-1 bg-[#0F6E56] text-white py-3 rounded-[8px] text-sm font-medium hover:bg-[#085041] disabled:opacity-50">
-                  Save Transfer
+                <button 
+                  type="submit" 
+                  disabled={!selectedChurch || isSubmitting}
+                  className={`flex-1 flex justify-center items-center gap-2 py-3 rounded-[8px] text-sm font-medium transition-colors ${
+                    (!selectedChurch || isSubmitting) ? 'bg-[#A5D6A7] text-white cursor-not-allowed' : 'bg-[#0F6E56] text-white hover:bg-[#085041]'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : 'Save Transfer'}
                 </button>
               </div>
             </form>

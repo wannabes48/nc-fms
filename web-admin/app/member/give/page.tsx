@@ -9,6 +9,7 @@ export default function GivePage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [amounts, setAmounts] = useState<Record<string, any>>({});
   const [dbCategories, setDbCategories] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Tracking state for polling
   const [currentRef, setCurrentRef] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export default function GivePage() {
 
   // 2. Submit the payload to Django
   const handlePaymentSubmit = async () => {
-    setView('wait');
+    setIsSubmitting(true);
     setPollCount(0);
     setCurrentRef(null);
     
@@ -63,12 +64,15 @@ export default function GivePage() {
       const data = await res.json();
       if (res.ok && data.reference) {
         setCurrentRef(data.reference); // Save reference to start polling
+        setView('wait');
       } else {
         setView('failed');
       }
     } catch (error) {
       console.error(error);
       setView('failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -239,11 +243,21 @@ export default function GivePage() {
             </div>
 
             <button 
-              disabled={totalAmount <= 0}
+              disabled={totalAmount <= 0 || isSubmitting}
               onClick={handlePaymentSubmit}
-              className="w-full bg-[#0F6E56] text-white py-4 rounded-[8px] font-medium hover:bg-[#085041] disabled:opacity-50"
+              className={`w-full flex justify-center items-center gap-2 py-4 rounded-[8px] font-medium transition-colors ${
+                (totalAmount <= 0 || isSubmitting) ? 'bg-[#A5D6A7] text-white cursor-not-allowed' : 'bg-[#0F6E56] text-white hover:bg-[#085041]'
+              }`}
             >
-              Pay Total via M-Pesa
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : 'Pay Total via M-Pesa'}
             </button>
           </div>
         )}

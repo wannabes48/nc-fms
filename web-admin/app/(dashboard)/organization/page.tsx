@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Building2, Map, MapPin, Plus, Trash2 } from 'lucide-react';
+import { Building2, Map, MapPin, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -10,13 +10,15 @@ export default function OrganizationPage() {
   const token = (session?.user as any)?.apiToken;
 
   const [activeTab, setActiveTab] = useState('stations');
-  const [stations, setStations] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [churches, setChurches] = useState([]);
+  const [stations, setStations] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [churches, setChurches] = useState<any[]>([]);
   
   // Form States
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', stationId: '', districtId: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (token) {
@@ -25,7 +27,7 @@ export default function OrganizationPage() {
   }, [token]);
 
   const fetchData = async () => {
-    const headers = token ? { 'Authorization': `Token ${token}` } : {};
+    const headers: HeadersInit = token ? { 'Authorization': `Token ${token}` } : {};
     
     const [statRes, distRes, churRes] = await Promise.all([
       fetch(`${API_URL}/api/stations/`, { headers }).then(res => res.json()),
@@ -41,43 +43,60 @@ export default function OrganizationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const endpoint = activeTab === 'stations' ? 'stations' : activeTab === 'districts' ? 'districts' : 'churches';
     
     const payload: any = { name: formData.name };
     if (activeTab === 'districts') payload.station = formData.stationId;
     if (activeTab === 'churches') payload.district = formData.districtId;
 
-    const res = await fetch(`${API_URL}/api/${endpoint}/`, {
-      method: 'POST',
-      headers: { 
+    try {
+      const headers: HeadersInit = { 
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Token ${token}` } : {})
-      },
-      body: JSON.stringify(payload)
-    });
+      };
+      
+      const res = await fetch(`${API_URL}/api/${endpoint}/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
 
-    if (res.ok) {
-      setShowForm(false);
-      setFormData({ name: '', stationId: '', districtId: '' });
-      fetchData(); // Refresh lists
-    } else {
-      alert('Failed to add entry. Check your data.');
+      if (res.ok) {
+        setShowForm(false);
+        setFormData({ name: '', stationId: '', districtId: '' });
+        fetchData(); // Refresh lists
+      } else {
+        alert('Failed to add entry. Check your data.');
+      }
+    } catch (err) {
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this?')) return;
     
+    setDeletingId(id);
     const endpoint = activeTab === 'stations' ? 'stations' : activeTab === 'districts' ? 'districts' : 'churches';
-    const res = await fetch(`${API_URL}/api/${endpoint}/${id}/`, {
-      method: 'DELETE',
-      headers: token ? { 'Authorization': `Token ${token}` } : {}
-    });
+    try {
+      const headers: HeadersInit = token ? { 'Authorization': `Token ${token}` } : {};
+      const res = await fetch(`${API_URL}/api/${endpoint}/${id}/`, {
+        method: 'DELETE',
+        headers
+      });
 
-    if (res.ok) {
-      fetchData(); // Refresh lists
-    } else {
-      alert('Failed to delete entry. Make sure it has no nested items.');
+      if (res.ok) {
+        fetchData(); // Refresh lists
+      } else {
+        alert('Failed to delete entry. Make sure it has no nested items.');
+      }
+    } catch (err) {
+      alert('An error occurred. Please try again.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -140,8 +159,13 @@ export default function OrganizationPage() {
               </div>
             )}
             
-            <button type="submit" className="bg-[#0F6E56] text-white px-6 py-2 rounded-[8px] h-[42px]">
-              Save
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className={`bg-[#0F6E56] text-white px-6 py-2 rounded-[8px] h-[42px] flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isSubmitting ? 'Saving...' : 'Save'}
             </button>
           </form>
         </div>
@@ -200,9 +224,14 @@ export default function OrganizationPage() {
                 <td className="p-4 text-right">
                   <button 
                     onClick={() => handleDelete(item.id)}
-                    className="text-red-500 hover:bg-red-50 p-2 rounded-[8px]"
+                    disabled={deletingId === item.id}
+                    className="text-red-500 hover:bg-red-50 p-2 rounded-[8px] disabled:opacity-50 flex items-center justify-center float-right"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {deletingId === item.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
                   </button>
                 </td>
               </tr>
