@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "SDA Nyamira - FMS",
+  title: "SDA Nyamira Conference - FMS",
   description: "Financial Management System",
 };
 

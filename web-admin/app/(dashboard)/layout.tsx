@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-64 bg-[#0F6E56] text-white flex flex-col shrink-0">
         <div className="p-6 border-b border-white/10">
           <Image src="/logo.png" alt="CFMS Logo" width={120} height={40} priority />
-          <h2 className="text-xl font-bold tracking-tight">SDA Nyamira</h2>
+          <h2 className="text-xl font-bold tracking-tight">SDA Nyamira Conference</h2>
           <p className="text-xs text-blue-200 mt-1">Treasury Portal</p>
         </div>
         

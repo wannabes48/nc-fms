@@ -1,52 +1,253 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body { font-family: Helvetica, sans-serif; font-size: 12pt; color: #232420; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .title { font-size: 18pt; font-weight: bold; color: #0F6E56; }
-        .details { margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background-color: #FAF9F6; text-align: left; padding: 8px; border-bottom: 1px solid #E4E1D8; }
-        td { padding: 8px; border-bottom: 1px solid #E4E1D8; }
-        .total { font-weight: bold; font-size: 14pt; color: #0F6E56; }
-    </style>
+<meta charset="UTF-8" />
+<title>Receipt {{ referenceNumber }}</title>
+<style>
+  @page {
+    size: 148mm 105mm; /* A6 landscape */
+    margin: 0;
+  }
+  body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: #FAF9F6;
+    color: #232420;
+  }
+  .paperReceipt {
+    background: #ffffff;
+    border: 1px solid #E4E1D8;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 10px;
+    width: 130mm;
+    min-height: 85mm;
+  }
+  .header {
+    width: 100%;
+    margin-bottom: 24px;
+  }
+  .headerLeft {
+    float: left;
+    width: 70%;
+  }
+  .logo {
+    width: 50px;
+    height: 50px;
+    float: left;
+    margin-right: 16px;
+  }
+  .header-text {
+    float: left;
+  }
+  .headerTitle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1B5E3B;
+    margin: 0 0 4px 0;
+  }
+  .headerSubtitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #0F6E56;
+    margin: 0 0 2px 0;
+  }
+  .headerAddress {
+    font-size: 12px;
+    color: #6B6A62;
+    margin: 0;
+  }
+  .stampBox {
+    float: right;
+    border: 2px solid #C0392B;
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-align: center;
+    width: 20%;
+  }
+  .stampNC {
+    font-size: 16px;
+    font-weight: bold;
+    color: #C0392B;
+    margin: 0 0 4px 0;
+  }
+  .stampSerial {
+    font-size: 10px;
+    font-weight: bold;
+    color: #C0392B;
+    margin: 0;
+  }
+  .clear {
+    clear: both;
+  }
+  .dottedLineContainer {
+    width: 100%;
+    margin-bottom: 16px;
+    padding-top: 5px;
+  }
+  .labelBold {
+    font-size: 12px;
+    font-weight: bold;
+    color: #232420;
+    text-transform: uppercase;
+    display: inline-block;
+    width: 100px;
+  }
+  .dottedFill {
+    display: inline-block;
+    border-bottom: 1px dotted #E4E1D8;
+    width: 350px;
+    padding-bottom: 2px;
+  }
+  .fillValue {
+    font-size: 14px;
+    color: #1B5E3B;
+    font-weight: bold;
+  }
+  table.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+  }
+  .tableRow {
+    border-bottom: 1px solid #E4E1D8;
+  }
+  .tableTotalRow td {
+    border-top: 2px solid #0F6E56;
+    border-bottom: 2px solid #0F6E56;
+    background: #FAF9F6;
+  }
+  td {
+    padding: 8px 4px;
+  }
+  .tdLabel {
+    width: 50%;
+  }
+  .tableLabelBold {
+    font-size: 12px;
+    font-weight: bold;
+    color: #232420;
+  }
+  .tdAmount {
+    width: 35%;
+    text-align: right;
+  }
+  .tableValue {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1B5E3B;
+  }
+  .tdCurrency {
+    width: 15%;
+    text-align: right;
+  }
+  .tableCurrency {
+    font-size: 12px;
+    color: #6B6A62;
+  }
+  .footerRow {
+    width: 100%;
+    margin-top: 20px;
+  }
+  .footerField {
+    float: left;
+    width: 30%;
+    margin-right: 3%;
+  }
+  .footerField.last {
+    margin-right: 0;
+  }
+  .footerField .labelBold {
+    width: auto;
+    margin-right: 8px;
+  }
+  .footerField .dottedFill {
+    width: auto;
+    min-width: 80px;
+  }
+</style>
 </head>
 <body>
+  <div class="paperReceipt">
+    <!-- Header -->
     <div class="header">
-        <div class="title">SDA Nyamira Conference</div>
-        <div>Official Giving Receipt</div>
-    </div>
-    
-    <div class="details">
-        <p><strong>Date:</strong> {{ transaction.created_at|date:"d M Y, H:i" }}</p>
-        <p><strong>Reference:</strong> {{ transaction.paystack_reference }}</p>
-        <p><strong>Member:</strong> {{ member_name }} ({{ transaction.phone_number }})</p>
-        <p><strong>Status:</strong> COMPLETED</p>
+      <div class="headerLeft">
+        <img src="{{ logo_path }}" class="logo" />
+        <div class="header-text">
+          <p class="headerTitle">Seventh Day Adventist Church</p>
+          <p class="headerSubtitle">Nyamira Conference</p>
+          <p class="headerAddress">P.O.Box 285 Nyamira</p>
+        </div>
+      </div>
+      <div class="stampBox">
+        <p class="stampNC">NC</p>
+        <p class="stampSerial">{{ referenceNumber }}</p>
+      </div>
+      <div class="clear"></div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Fund Category</th>
-                <th style="text-align: right;">Amount (KES)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for alloc in allocations %}
-            <tr>
-                <td>
-                    {{ alloc.category.name }}
-                    {% if alloc.custom_description %}<br><small><i>{{ alloc.custom_description }}</i></small>{% endif %}
-                </td>
-                <td style="text-align: right;">{{ alloc.amount }}</td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td><strong>Total</strong></td>
-                <td style="text-align: right;" class="total">KES {{ transaction.total_amount }}</td>
-            </tr>
-        </tbody>
+    <!-- Name Line -->
+    <div class="dottedLineContainer">
+      <span class="labelBold">NAME</span>
+      <span class="dottedFill"><span class="fillValue">{{ memberName }}</span></span>
+    </div>
+
+    <!-- Categories Table -->
+    <table class="table">
+      <tr class="tableRow">
+        <td class="tdLabel"><span class="tableLabelBold">Tithe 10%</span></td>
+        <td class="tdAmount"><span class="tableValue">{{ amounts.tithe }}</span></td>
+        <td class="tdCurrency"><span class="tableCurrency">KSh</span></td>
+      </tr>
+      <tr class="tableRow">
+        <td class="tdLabel"><span class="tableLabelBold">Combined Offering</span></td>
+        <td class="tdAmount"><span class="tableValue">{{ amounts.combinedOffering }}</span></td>
+        <td class="tdCurrency"><span class="tableCurrency">KSh</span></td>
+      </tr>
+      <tr class="tableRow">
+        <td class="tdLabel"><span class="tableLabelBold">Camp Meeting Offering</span></td>
+        <td class="tdAmount"><span class="tableValue">{{ amounts.campMeeting }}</span></td>
+        <td class="tdCurrency"><span class="tableCurrency">KSh</span></td>
+      </tr>
+      <tr class="tableRow">
+        <td class="tdLabel"><span class="tableLabelBold">Others</span></td>
+        <td class="tdAmount"><span class="tableValue">{{ amounts.others }}</span></td>
+        <td class="tdCurrency"><span class="tableCurrency">KSh</span></td>
+      </tr>
+      <tr class="tableRow">
+        <td class="tdLabel"><span class="tableLabelBold"> </span></td>
+        <td class="tdAmount"><span class="tableValue"> </span></td>
+        <td class="tdCurrency"><span class="tableCurrency"> </span></td>
+      </tr>
+      <tr class="tableRow tableTotalRow">
+        <td class="tdLabel"><span class="tableLabelBold" style="text-align: right;">TOTAL</span></td>
+        <td class="tdAmount"><span class="tableValue">{{ amounts.total }}</span></td>
+        <td class="tdCurrency"><span class="tableCurrency">KSh</span></td>
+      </tr>
     </table>
+
+    <!-- Amount in words -->
+    <div class="dottedLineContainer">
+      <span class="labelBold">Amount in words</span>
+      <span class="dottedFill"><span class="fillValue">{{ amountInWords }}</span></span>
+    </div>
+
+    <!-- Footer Line -->
+    <div class="footerRow">
+      <div class="footerField">
+        <span class="labelBold">CHURCH</span>
+        <span class="dottedFill"><span class="fillValue">{{ churchName }}</span></span>
+      </div>
+      <div class="footerField">
+        <span class="labelBold">Treasurer</span>
+        <span class="dottedFill"><span class="fillValue">System</span></span>
+      </div>
+      <div class="footerField last">
+        <span class="labelBold">Date</span>
+        <span class="dottedFill"><span class="fillValue">{{ date }}</span></span>
+      </div>
+      <div class="clear"></div>
+    </div>
+  </div>
 </body>
 </html>

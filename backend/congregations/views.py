@@ -246,12 +246,23 @@ class StaffUserManagementView(APIView):
         data = request.data
         try:
             with transaction.atomic():
-                user = User.objects.create(
-                    phone_number=data.get('phone_number'),
-                    email=data.get('email'),
-                    is_staff=True,
-                    is_superuser=(data.get('role') == 'CONFERENCE_ADMIN')
+                phone = data.get('phone_number')
+                user, created = User.objects.get_or_create(
+                    phone_number=phone,
+                    defaults={
+                        'email': data.get('email', ''),
+                        'is_staff': True,
+                        'is_superuser': (data.get('role') == 'CONFERENCE_ADMIN')
+                    }
                 )
+                
+                if not created:
+                    # Update existing user to staff
+                    user.is_staff = True
+                    user.is_superuser = (data.get('role') == 'CONFERENCE_ADMIN')
+                    if data.get('email'):
+                        user.email = data.get('email')
+                
                 user.set_password(data.get('password'))
                 user.save()
 

@@ -314,12 +314,46 @@ class ReceiptDownloadView(APIView):
                 return HttpResponse("Transaction not completed", status=400)
 
             template = get_template('receipts/receipt_template.html')
+            
+            # Helper to safely format numbers or empty if 0
+            def fmt(val):
+                return f"{val:,.2f}" if val else ""
+            
+            # Map allocations
+            amounts = {'tithe': '', 'combinedOffering': '', 'campMeeting': '', 'others': '', 'total': fmt(transaction.total_amount)}
+            for alloc in transaction.allocations.all():
+                c_name = alloc.category.name.lower()
+                if 'tithe' in c_name:
+                    amounts['tithe'] = fmt(alloc.amount)
+                elif 'camp' in c_name:
+                    amounts['campMeeting'] = fmt(alloc.amount)
+                elif 'combined' in c_name or 'offering' in c_name:
+                    amounts['combinedOffering'] = fmt(alloc.amount)
+                else:
+                    others_val = float(amounts['others'].replace(',', '')) if amounts['others'] else 0.0
+                    amounts['others'] = fmt(others_val + float(alloc.amount))
+
+            import os
+            logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'web-admin', 'public', 'logo.png')
+            
+            try:
+                from num2words import num2words
+                amount_words = num2words(transaction.total_amount, lang='en').upper() + " SHILLINGS"
+            except ImportError:
+                amount_words = str(transaction.total_amount)
+            
             member_name = f"{transaction.user.profile.first_name} {transaction.user.profile.last_name}".strip() if hasattr(transaction.user, 'profile') else "Guest"
+            church_name = transaction.user.profile.local_church.name if (hasattr(transaction.user, 'profile') and transaction.user.profile.local_church) else "Unassigned"
             
             context = {
-                'transaction': transaction,
-                'member_name': member_name,
-                'allocations': transaction.allocations.all()
+                'logo_path': 'file://' + logo_path.replace('\\', '/'),
+                'referenceNumber': transaction.paystack_reference,
+                'memberName': member_name,
+                'amounts': amounts,
+                'amountInWords': amount_words,
+                'churchName': church_name,
+                'treasurerName': 'System Generated',
+                'date': transaction.created_at.strftime('%d-%b-%Y')
             }
             html = template.render(context)
             
