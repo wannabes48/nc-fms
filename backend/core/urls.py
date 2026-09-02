@@ -1,10 +1,15 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
-from congregations.views import LocalChurchListCreateView, LocalChurchDetailView
+from congregations.views import StationViewSet, DistrictViewSet, LocalChurchViewSet, RequestOTPView, VerifyOTPView, StaffLoginView, MemberProfileView, UpdateProfileView, UpdateMemberChurchView, StaffUserManagementView
 from finance.views import OfferingCategoryListView, TransactionHistoryView
 from payments.views import InitiatePaymentView, PaystackWebhookView, AnalyticsAPIView, TransactionListView, TransactionExportCSVView, CategoryListCreateView, CategoryDetailView, TransactionStatusView, ReceiptDownloadView
-from congregations.views import StationListView, DistrictListView, RequestOTPView, VerifyOTPView, StaffLoginView, MemberProfileView, UpdateProfileView, UpdateMemberChurchView, StaffUserManagementView
+
+router = DefaultRouter()
+router.register(r'stations', StationViewSet, basename='station')
+router.register(r'districts', DistrictViewSet, basename='district')
+router.register(r'churches', LocalChurchViewSet, basename='church')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,10 +22,7 @@ urlpatterns = [
     path('api/auth/update-church/', UpdateMemberChurchView.as_view(), name='update-church'),
     
     # App Endpoints
-    path('api/stations/', StationListView.as_view(), name='station-list'),
-    path('api/districts/', DistrictListView.as_view(), name='district-list'),
-    path('api/churches/', LocalChurchListCreateView.as_view(), name='church-list'),
-    path('api/churches/<int:pk>/', LocalChurchDetailView.as_view(), name='church-detail'),
+    path('api/', include(router.urls)),
 
     path('api/transactions/history/', TransactionHistoryView.as_view(), name='transaction-history'),
     path('api/payments/initiate/', InitiatePaymentView.as_view(), name='initiate-payment'),

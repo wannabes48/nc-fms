@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, status, serializers
+from rest_framework import generics, permissions, status, serializers, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate
@@ -56,38 +56,36 @@ class VerifyOTPView(APIView):
         
         return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
     
-class StationListView(generics.ListAPIView):
-    queryset = Station.objects.all()
+class StationViewSet(viewsets.ModelViewSet):
+    queryset = Station.objects.all().order_by('name')
     serializer_class = StationSerializer
+    permission_classes = [IsSuperUserOrReadOnly]
 
-class DistrictListView(generics.ListAPIView):
+class DistrictViewSet(viewsets.ModelViewSet):
+    queryset = District.objects.all().order_by('name')
     serializer_class = DistrictSerializer
+    permission_classes = [IsSuperUserOrReadOnly]
     
     def get_queryset(self):
-        queryset = District.objects.all()
+        queryset = super().get_queryset()
         # Allow the frontend to filter: /api/districts/?station_id=1
         station_id = self.request.query_params.get('station_id')
         if station_id:
             queryset = queryset.filter(station_id=station_id)
         return queryset
 
-class LocalChurchListCreateView(generics.ListCreateAPIView):
+class LocalChurchViewSet(viewsets.ModelViewSet):
+    queryset = LocalChurch.objects.all().order_by('name')
     serializer_class = LocalChurchSerializer
     permission_classes = [IsSuperUserOrReadOnly]
     
     def get_queryset(self):
-        queryset = LocalChurch.objects.all().order_by('name')
+        queryset = super().get_queryset()
         # Allow the frontend to filter: /api/churches/?district_id=1
         district_id = self.request.query_params.get('district_id')
         if district_id:
             queryset = queryset.filter(district_id=district_id)
         return queryset
-
-# Add a new DetailView for updates/deletions
-class LocalChurchDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = LocalChurch.objects.all()
-    serializer_class = LocalChurchSerializer
-    permission_classes = [IsSuperUserOrReadOnly]
 
 
 

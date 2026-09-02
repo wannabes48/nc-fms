@@ -196,7 +196,7 @@ export default function MemberLogin() {
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Daniel"
+                  placeholder="James"
                   className="w-full px-4 py-3 rounded-[8px] border border-[#E4E1D8] focus:border-[#0F6E56] outline-none text-[#232420]"
                   required
                 />
@@ -207,7 +207,7 @@ export default function MemberLogin() {
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Siro"
+                  placeholder="Makori"
                   className="w-full px-4 py-3 rounded-[8px] border border-[#E4E1D8] focus:border-[#0F6E56] outline-none text-[#232420]"
                   required
                 />

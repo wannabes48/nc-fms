@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Transactions', href: '/transactions', icon: FileSpreadsheet },
     { name: 'Fund Categories', href: '/funds', icon: Wallet, adminOnly: true },
-    { name: 'Churches', href: '/churches', icon: Church, adminOnly: true },
+    { name: 'Organization', href: '/organization', icon: Church, adminOnly: true },
     { name: 'Users', href: '/users', icon: Users, adminOnly: true },
   ];
 
